@@ -224,12 +224,6 @@ curl -X POST http://localhost:8080/api/auth/login \
 - Build com Maven: `mvn clean package`
 - Deploy no servidor Tomcat
 
-## 📚 Documentação Adicional
-
-- [Guia de Desenvolvimento Completo](GUIA_DESENVOLVIMENTO_SISTEMA.md)
-- [Documentação da API](docs/api.md)
-- [Manual do Usuário](docs/user-manual.md)
-
 ## 🤝 Contribuição
 
 1. Faça um Fork do projeto
@@ -238,13 +232,9 @@ curl -X POST http://localhost:8080/api/auth/login \
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📄 Licença
-
-Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
 ## 👥 Autores
 
-- **Francisco J. Alves** - Trabalho inicial - [SeuGitHub](https://github.com/libertychain)
+- **Francisco J. Alves** - Trabalho inicial - [libertychain](https://github.com/libertychain)
 
 ## Agradecimentos
 
