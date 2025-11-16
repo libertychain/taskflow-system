@@ -149,9 +149,6 @@ spring.jpa.hibernate.ddl-auto=create-drop
 spring.jpa.show-sql=true
 spring.jpa.defer-datasource-initialization=true
 
-# Segurança
-spring.security.user.name=admin
-spring.security.user.password=admin123
 ```
 
 ## 🎯 Endpoints da API
