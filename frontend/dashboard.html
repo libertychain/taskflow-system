@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TechAlves Soluções</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .sidebar-item {
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-right: 3px solid #3b82f6;
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .pulse-dot {
+            animation: pulse-dot 2s infinite;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    
+    <!-- Sidebar -->
+    <div class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-10">
+        <div class="p-6">
+            <div class="flex items-center space-x-3 mb-8">
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-tasks text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-gray-800">TechAlves</h1>
+                    <p class="text-xs text-gray-500">Soluções</p>
+                </div>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="dashboard.html" class="sidebar-item active flex items-center space-x-3 p-3 rounded-lg text-gray-700">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="tasks.html" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg text-gray-700">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Tarefas</span>
+                </a>
+                <a href="projects.html" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg text-gray-700">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Projetos</span>
+                </a>
+                <a href="#" onclick="logout()" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg text-red-600">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Sair</span>
+                </a>
+            </nav>
+        </div>
+        
+        <!-- User Info -->
+        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span id="userInitials" class="text-white font-semibold text-sm">US</span>
+                </div>
+                <div>
+                    <p id="userName" class="font-medium text-gray-800 text-sm">Usuário</p>
+                    <p id="userRole" class="text-xs text-gray-500">Role</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="ml-64 p-8">
+        
+        <!-- Header -->
+        <div class="mb-8 fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold gradient-text">Dashboard</h1>
+                    <p class="text-gray-600 mt-1">Visão geral do sistema e métricas</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="bg-white rounded-lg px-4 py-2 shadow-sm">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
+                            <span class="text-sm text-gray-600">Online</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Total Tarefas</p>
+                        <p id="totalTasks" class="text-2xl font-bold text-gray-800">-</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clipboard-list text-blue-600 text-lg"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Em Progresso</p>
+                        <p id="inProgressTasks" class="text-2xl font-bold text-yellow-600">-</p>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clock text-yellow-600 text-lg"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Concluídas</p>
+                        <p id="completedTasks" class="text-2xl font-bold text-green-600">-</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-600 text-lg"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 shadow-sm card-hover fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm">Projetos Ativos</p>
+                        <p id="activeProjects" class="text-2xl font-bold text-purple-600">-</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-project-diagram text-purple-600 text-lg"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            
+            <!-- Tasks by Status Chart -->
+            <div class="bg-white rounded-xl p-6 shadow-sm fade-in">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-chart-pie text-blue-500 mr-2"></i>
+                    Tarefas por Status
+                </h3>
+                <div class="h-64">
+                    <canvas id="tasksByStatusChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Tasks by User Chart -->
+            <div class="bg-white rounded-xl p-6 shadow-sm fade-in">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-users text-green-500 mr-2"></i>
+                    Distribuição por Usuário
+                </h3>
+                <div class="h-64">
+                    <canvas id="tasksByUserChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Tasks -->
+        <div class="bg-white rounded-xl shadow-sm fade-in">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">
+                    <i class="fas fa-history text-purple-500 mr-2"></i>
+                    Tarefas Recentes
+                </h3>
+            </div>
+            <div class="p-6">
+                <div id="recentTasks" class="space-y-4">
+                    <!-- Tasks will be loaded here -->
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Carregando tarefas...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Configuração do Axios
+        const api = axios.create({
+            baseURL: 'http://localhost:8080',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Verificar autenticação
+        function checkAuth() {
+            const sessionId = localStorage.getItem('sessionId');
+            if (!sessionId) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            return sessionId;
+        }
+        
+        // Carregar dados do usuário
+        function loadUserInfo() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.name) {
+                document.getElementById('userName').textContent = user.name;
+                document.getElementById('userRole').textContent = user.role;
+                document.getElementById('userInitials').textContent = 
+                    user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            }
+        }
+        
+        // Carregar estatísticas
+        async function loadStats() {
+            const sessionId = checkAuth();
+            if (!sessionId) return;
+            
+            try {
+                const response = await api.get('/api/tasks/dashboard/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                });
+                
+                const stats = response.data;
+                
+                // Atualizar cards
+                document.getElementById('totalTasks').textContent = stats.totalTasks || 0;
+                document.getElementById('inProgressTasks').textContent = stats.tasksByStatus?.IN_PROGRESS || 0;
+                document.getElementById('completedTasks').textContent = stats.tasksByStatus?.COMPLETED || 0;
+                document.getElementById('activeProjects').textContent = '3'; // Mock data
+                
+                // Criar gráficos
+                createTasksByStatusChart(stats.tasksByStatus);
+                createTasksByUserChart(stats.tasksByUser);
+                
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+                showError('Erro ao carregar dados do dashboard');
+            }
+        }
+        
+        // Criar gráfico de tarefas por status
+        function createTasksByStatusChart(tasksByStatus) {
+            const ctx = document.getElementById('tasksByStatusChart').getContext('2d');
+            
+            const data = {
+                labels: ['Pendentes', 'Em Progresso', 'Concluídas', 'Canceladas'],
+                datasets: [{
+                    data: [
+                        tasksByStatus?.PENDING || 0,
+                        tasksByStatus?.IN_PROGRESS || 0,
+                        tasksByStatus?.COMPLETED || 0,
+                        tasksByStatus?.CANCELLED || 0
+                    ],
+                    backgroundColor: [
+                        '#f59e0b',
+                        '#3b82f6',
+                        '#10b981',
+                        '#ef4444'
+                    ],
+                    borderWidth: 0
+                }]
+            };
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Criar gráfico de tarefas por usuário
+        function createTasksByUserChart(tasksByUser) {
+            const ctx = document.getElementById('tasksByUserChart').getContext('2d');
+            
+            if (!tasksByUser || tasksByUser.length === 0) {
+                // Dados mockados para demonstração
+                const mockData = {
+                    labels: ['Admin', 'Manager', 'User', 'Analyst', 'Designer'],
+                    datasets: [{
+                        label: 'Tarefas',
+                        data: [3, 5, 2, 4, 1],
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#1d4ed8',
+                        borderWidth: 1
+                    }]
+                };
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: mockData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+            
+            const labels = tasksByUser.map(item => item.userName);
+            const data = tasksByUser.map(item => item.taskCount);
+            
+            const chartData = {
+                labels: labels,
+                datasets: [{
+                    label: 'Tarefas',
+                    data: data,
+                    backgroundColor: '#3b82f6',
+                    borderColor: '#1d4ed8',
+                    borderWidth: 1
+                }]
+            };
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Carregar tarefas recentes
+        async function loadRecentTasks() {
+            const sessionId = checkAuth();
+            if (!sessionId) return;
+            
+            try {
+                const response = await api.get('/api/tasks', {
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                });
+                
+                const tasks = response.data.slice(0, 5); // Pegar apenas 5 tarefas
+                const recentTasksContainer = document.getElementById('recentTasks');
+                
+                if (tasks.length === 0) {
+                    recentTasksContainer.innerHTML = `
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-clipboard-list text-4xl mb-2"></i>
+                            <p>Nenhuma tarefa encontrada</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                recentTasksContainer.innerHTML = tasks.map(task => `
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-3 h-3 rounded-full ${getStatusColor(task.status)}"></div>
+                            <div>
+                                <h4 class="font-medium text-gray-800">${task.title}</h4>
+                                <p class="text-sm text-gray-600">
+                                    ${task.assignedToName || 'Não atribuído'} • 
+                                    ${task.projectName || 'Sem projeto'}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="px-2 py-1 text-xs rounded-full ${getStatusBadgeColor(task.status)}">
+                                ${getStatusText(task.status)}
+                            </span>
+                            <p class="text-xs text-gray-500 mt-1">
+                                ${task.dueDate ? new Date(task.dueDate).toLocaleDateString('pt-BR') : 'Sem prazo'}
+                            </p>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                console.error('Erro ao carregar tarefas recentes:', error);
+                document.getElementById('recentTasks').innerHTML = `
+                    <div class="text-center py-8 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                        <p>Erro ao carregar tarefas</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Funções auxiliares
+        function getStatusColor(status) {
+            const colors = {
+                'PENDING': 'bg-yellow-400',
+                'IN_PROGRESS': 'bg-blue-400',
+                'COMPLETED': 'bg-green-400',
+                'CANCELLED': 'bg-red-400'
+            };
+            return colors[status] || 'bg-gray-400';
+        }
+        
+        function getStatusBadgeColor(status) {
+            const colors = {
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'IN_PROGRESS': 'bg-blue-100 text-blue-800',
+                'COMPLETED': 'bg-green-100 text-green-800',
+                'CANCELLED': 'bg-red-100 text-red-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        }
+        
+        function getStatusText(status) {
+            const texts = {
+                'PENDING': 'Pendente',
+                'IN_PROGRESS': 'Em Progresso',
+                'COMPLETED': 'Concluída',
+                'CANCELLED': 'Cancelada'
+            };
+            return texts[status] || status;
+        }
+        
+        function showError(message) {
+            // Adicionar notificação de erro
+            console.error(message);
+        }
+        
+        function logout() {
+            const sessionId = localStorage.getItem('sessionId');
+            if (sessionId) {
+                api.post('/api/auth/logout', {}, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                }).finally(() => {
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                });
+            } else {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserInfo();
+            loadStats();
+            loadRecentTasks();
+            
+            // Animações de entrada
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    el.style.transition = 'all 0.6s ease-out';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

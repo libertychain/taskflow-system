@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Tarefas - TechAlves Soluções</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .sidebar-item {
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(59, 130, 246, 0.1);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            border-right: 3px solid #3b82f6;
+        }
+        
+        .task-card {
+            transition: all 0.3s ease;
+        }
+        
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .priority-high { border-left: 4px solid #ef4444; }
+        .priority-medium { border-left: 4px solid #f59e0b; }
+        .priority-low { border-left: 4px solid #10b981; }
+        .priority-urgent { border-left: 4px solid #dc2626; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    
+    <!-- Sidebar -->
+    <div class="fixed left-0 top-0 h-full w-64 bg-white shadow-lg z-10">
+        <div class="p-6">
+            <div class="flex items-center space-x-3 mb-8">
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-tasks text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-gray-800">TechAlves</h1>
+                    <p class="text-xs text-gray-500">Soluções</p>
+                </div>
+            </div>
+            
+            <nav class="space-y-2">
+                <a href="dashboard.html" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg text-gray-700">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="tasks.html" class="sidebar-item active flex items-center space-x-3 p-3 rounded-lg text-gray-700">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Tarefas</span>
+                </a>
+                <a href="projects.html" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg text-gray-700">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Projetos</span>
+                </a>
+                <a href="#" onclick="logout()" class="sidebar-item flex items-center space-x-3 p-3 rounded-lg text-red-600">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Sair</span>
+                </a>
+            </nav>
+        </div>
+        
+        <!-- User Info -->
+        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <span id="userInitials" class="text-white font-semibold text-sm">US</span>
+                </div>
+                <div>
+                    <p id="userName" class="font-medium text-gray-800 text-sm">Usuário</p>
+                    <p id="userRole" class="text-xs text-gray-500">Role</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="ml-64 p-8">
+        
+        <!-- Header -->
+        <div class="mb-8 fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Gestão de Tarefas</h1>
+                    <p class="text-gray-600 mt-1">Gerencie e acompanhe suas tarefas</p>
+                </div>
+                <button 
+                    onclick="openTaskModal()" 
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                >
+                    <i class="fas fa-plus mr-2"></i>
+                    Nova Tarefa
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="bg-white rounded-xl p-6 shadow-sm mb-6 fade-in">
+            <div class="flex flex-wrap gap-4">
+                <div class="flex-1 min-w-48">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Status</label>
+                    <select id="statusFilter" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Todos</option>
+                        <option value="PENDING">Pendentes</option>
+                        <option value="IN_PROGRESS">Em Progresso</option>
+                        <option value="COMPLETED">Concluídas</option>
+                        <option value="CANCELLED">Canceladas</option>
+                    </select>
+                </div>
+                
+                <div class="flex-1 min-w-48">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Filtrar por Prioridade</label>
+                    <select id="priorityFilter" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">Todas</option>
+                        <option value="URGENT">Urgente</option>
+                        <option value="HIGH">Alta</option>
+                        <option value="MEDIUM">Média</option>
+                        <option value="LOW">Baixa</option>
+                    </select>
+                </div>
+                
+                <div class="flex-1 min-w-48">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Buscar tarefas..."
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tasks Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Pending Tasks -->
+            <div class="bg-white rounded-xl shadow-sm fade-in">
+                <div class="p-4 border-b border-gray-200 bg-yellow-50 rounded-t-xl">
+                    <h3 class="font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-clock text-yellow-600 mr-2"></i>
+                        Pendentes
+                        <span id="pendingCount" class="ml-2 bg-yellow-200 text-yellow-800 text-xs px-2 py-1 rounded-full">0</span>
+                    </h3>
+                </div>
+                <div id="pendingTasks" class="p-4 space-y-3 min-h-96">
+                    <!-- Tasks will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- In Progress Tasks -->
+            <div class="bg-white rounded-xl shadow-sm fade-in">
+                <div class="p-4 border-b border-gray-200 bg-blue-50 rounded-t-xl">
+                    <h3 class="font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-play text-blue-600 mr-2"></i>
+                        Em Progresso
+                        <span id="progressCount" class="ml-2 bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded-full">0</span>
+                    </h3>
+                </div>
+                <div id="progressTasks" class="p-4 space-y-3 min-h-96">
+                    <!-- Tasks will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Completed Tasks -->
+            <div class="bg-white rounded-xl shadow-sm fade-in">
+                <div class="p-4 border-b border-gray-200 bg-green-50 rounded-t-xl">
+                    <h3 class="font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                        Concluídas
+                        <span id="completedCount" class="ml-2 bg-green-200 text-green-800 text-xs px-2 py-1 rounded-full">0</span>
+                    </h3>
+                </div>
+                <div id="completedTasks" class="p-4 space-y-3 min-h-96">
+                    <!-- Tasks will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Task Modal -->
+    <div id="taskModal" class="modal">
+        <div class="bg-white rounded-xl p-8 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 id="modalTitle" class="text-2xl font-bold text-gray-800">Nova Tarefa</h2>
+                <button onclick="closeTaskModal()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form id="taskForm" class="space-y-6">
+                <input type="hidden" id="taskId">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Título *</label>
+                        <input 
+                            type="text" 
+                            id="taskTitle" 
+                            required
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Digite o título da tarefa"
+                        >
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Prioridade</label>
+                        <select id="taskPriority" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="LOW">Baixa</option>
+                            <option value="MEDIUM" selected>Média</option>
+                            <option value="HIGH">Alta</option>
+                            <option value="URGENT">Urgente</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
+                    <textarea 
+                        id="taskDescription" 
+                        rows="4"
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Descreva a tarefa..."
+                    ></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Responsável</label>
+                        <select id="taskAssignee" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Selecionar responsável</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Prazo</label>
+                        <input 
+                            type="date" 
+                            id="taskDueDate"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-4">
+                    <button 
+                        type="button" 
+                        onclick="closeTaskModal()"
+                        class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                    <button 
+                        type="submit"
+                        class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+                    >
+                        <span id="submitText">Criar Tarefa</span>
+                        <i id="submitSpinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Configuração do Axios
+        const api = axios.create({
+            baseURL: 'http://localhost:8080',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        let allTasks = [];
+        let users = [];
+        let currentEditingTask = null;
+        
+        // Verificar autenticação
+        function checkAuth() {
+            const sessionId = localStorage.getItem('sessionId');
+            if (!sessionId) {
+                window.location.href = 'index.html';
+                return false;
+            }
+            return sessionId;
+        }
+        
+        // Carregar dados do usuário
+        function loadUserInfo() {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.name) {
+                document.getElementById('userName').textContent = user.name;
+                document.getElementById('userRole').textContent = user.role;
+                document.getElementById('userInitials').textContent = 
+                    user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            }
+        }
+        
+        // Carregar usuários
+        async function loadUsers() {
+            const sessionId = checkAuth();
+            if (!sessionId) return;
+            
+            try {
+                const response = await api.get('/api/users', {
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                });
+                
+                users = response.data;
+                const assigneeSelect = document.getElementById('taskAssignee');
+                
+                assigneeSelect.innerHTML = '<option value="">Selecionar responsável</option>';
+                users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.name;
+                    assigneeSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('Erro ao carregar usuários:', error);
+            }
+        }
+        
+        // Carregar tarefas
+        async function loadTasks() {
+            const sessionId = checkAuth();
+            if (!sessionId) return;
+            
+            try {
+                const response = await api.get('/api/tasks', {
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                });
+                
+                allTasks = response.data;
+                renderTasks();
+                updateTaskCounts();
+                
+            } catch (error) {
+                console.error('Erro ao carregar tarefas:', error);
+                showError('Erro ao carregar tarefas');
+            }
+        }
+        
+        // Renderizar tarefas
+        function renderTasks() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filteredTasks = allTasks;
+            
+            // Aplicar filtros
+            if (statusFilter) {
+                filteredTasks = filteredTasks.filter(task => task.status === statusFilter);
+            }
+            
+            if (priorityFilter) {
+                filteredTasks = filteredTasks.filter(task => task.priority === priorityFilter);
+            }
+            
+            if (searchTerm) {
+                filteredTasks = filteredTasks.filter(task => 
+                    task.title.toLowerCase().includes(searchTerm) ||
+                    task.description.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Separar por status
+            const pendingTasks = filteredTasks.filter(task => task.status === 'PENDING');
+            const progressTasks = filteredTasks.filter(task => task.status === 'IN_PROGRESS');
+            const completedTasks = filteredTasks.filter(task => task.status === 'COMPLETED');
+            
+            // Renderizar cada coluna
+            document.getElementById('pendingTasks').innerHTML = renderTaskColumn(pendingTasks);
+            document.getElementById('progressTasks').innerHTML = renderTaskColumn(progressTasks);
+            document.getElementById('completedTasks').innerHTML = renderTaskColumn(completedTasks);
+        }
+        
+        // Renderizar coluna de tarefas
+        function renderTaskColumn(tasks) {
+            if (tasks.length === 0) {
+                return `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-clipboard-list text-3xl mb-2"></i>
+                        <p class="text-sm">Nenhuma tarefa</p>
+                    </div>
+                `;
+            }
+            
+            return tasks.map(task => `
+                <div class="task-card bg-white border rounded-lg p-4 priority-${task.priority.toLowerCase()}">
+                    <div class="flex items-start justify-between mb-3">
+                        <h4 class="font-semibold text-gray-800 text-sm flex-1">${task.title}</h4>
+                        <div class="flex space-x-1">
+                            <button onclick="editTask(${task.id})" class="text-blue-500 hover:text-blue-700 p-1">
+                                <i class="fas fa-edit text-xs"></i>
+                            </button>
+                            <button onclick="deleteTask(${task.id})" class="text-red-500 hover:text-red-700 p-1">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    ${task.description ? `<p class="text-gray-600 text-xs mb-3 line-clamp-2">${task.description}</p>` : ''}
+                    
+                    <div class="space-y-2 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2 py-1 rounded-full ${getPriorityBadgeColor(task.priority)}">
+                                ${getPriorityText(task.priority)}
+                            </span>
+                            <div class="w-2 h-2 rounded-full ${getStatusColor(task.status)}"></div>
+                        </div>
+                        
+                        ${task.assignedToName ? `
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-user mr-1"></i>
+                                <span>${task.assignedToName}</span>
+                            </div>
+                        ` : ''}
+                        
+                        ${task.dueDate ? `
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span>${new Date(task.dueDate).toLocaleDateString('pt-BR')}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="mt-3 pt-3 border-t border-gray-100">
+                        <select 
+                            onchange="updateTaskStatus(${task.id}, this.value)"
+                            class="w-full text-xs p-2 border border-gray-300 rounded focus:ring-1 focus:ring-blue-500"
+                        >
+                            <option value="PENDING" ${task.status === 'PENDING' ? 'selected' : ''}>Pendente</option>
+                            <option value="IN_PROGRESS" ${task.status === 'IN_PROGRESS' ? 'selected' : ''}>Em Progresso</option>
+                            <option value="COMPLETED" ${task.status === 'COMPLETED' ? 'selected' : ''}>Concluída</option>
+                            <option value="CANCELLED" ${task.status === 'CANCELLED' ? 'selected' : ''}>Cancelada</option>
+                        </select>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Atualizar contadores
+        function updateTaskCounts() {
+            const pending = allTasks.filter(task => task.status === 'PENDING').length;
+            const progress = allTasks.filter(task => task.status === 'IN_PROGRESS').length;
+            const completed = allTasks.filter(task => task.status === 'COMPLETED').length;
+            
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('progressCount').textContent = progress;
+            document.getElementById('completedCount').textContent = completed;
+        }
+        
+        // Modal functions
+        function openTaskModal(task = null) {
+            currentEditingTask = task;
+            const modal = document.getElementById('taskModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const submitText = document.getElementById('submitText');
+            
+            if (task) {
+                modalTitle.textContent = 'Editar Tarefa';
+                submitText.textContent = 'Atualizar Tarefa';
+                
+                // Preencher formulário
+                document.getElementById('taskId').value = task.id;
+                document.getElementById('taskTitle').value = task.title;
+                document.getElementById('taskDescription').value = task.description || '';
+                document.getElementById('taskPriority').value = task.priority;
+                document.getElementById('taskAssignee').value = task.assignedToId || '';
+                document.getElementById('taskDueDate').value = task.dueDate || '';
+            } else {
+                modalTitle.textContent = 'Nova Tarefa';
+                submitText.textContent = 'Criar Tarefa';
+                document.getElementById('taskForm').reset();
+            }
+            
+            modal.classList.add('show');
+        }
+        
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('show');
+            currentEditingTask = null;
+        }
+        
+        // CRUD operations
+        async function saveTask(event) {
+            event.preventDefault();
+            
+            const sessionId = checkAuth();
+            if (!sessionId) return;
+            
+            const taskId = document.getElementById('taskId').value;
+            const taskData = {
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                priority: document.getElementById('taskPriority').value,
+                assignedToId: document.getElementById('taskAssignee').value || null,
+                dueDate: document.getElementById('taskDueDate').value || null
+            };
+            
+            const submitText = document.getElementById('submitText');
+            const submitSpinner = document.getElementById('submitSpinner');
+            
+            submitText.textContent = taskId ? 'Atualizando...' : 'Criando...';
+            submitSpinner.classList.remove('hidden');
+            
+            try {
+                if (taskId) {
+                    // Atualizar tarefa
+                    await api.put(`/api/tasks/${taskId}`, taskData, {
+                        headers: {
+                            'Authorization': `Bearer ${sessionId}`
+                        }
+                    });
+                } else {
+                    // Criar nova tarefa
+                    await api.post('/api/tasks', taskData, {
+                        headers: {
+                            'Authorization': `Bearer ${sessionId}`
+                        }
+                    });
+                }
+                
+                closeTaskModal();
+                loadTasks();
+                
+            } catch (error) {
+                console.error('Erro ao salvar tarefa:', error);
+                showError('Erro ao salvar tarefa');
+            } finally {
+                submitText.textContent = taskId ? 'Atualizar Tarefa' : 'Criar Tarefa';
+                submitSpinner.classList.add('hidden');
+            }
+        }
+        
+        async function editTask(taskId) {
+            const task = allTasks.find(t => t.id === taskId);
+            if (task) {
+                openTaskModal(task);
+            }
+        }
+        
+        async function deleteTask(taskId) {
+            if (!confirm('Tem certeza que deseja excluir esta tarefa?')) {
+                return;
+            }
+            
+            const sessionId = checkAuth();
+            if (!sessionId) return;
+            
+            try {
+                await api.delete(`/api/tasks/${taskId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                });
+                
+                loadTasks();
+                
+            } catch (error) {
+                console.error('Erro ao excluir tarefa:', error);
+                showError('Erro ao excluir tarefa');
+            }
+        }
+        
+        async function updateTaskStatus(taskId, newStatus) {
+            const sessionId = checkAuth();
+            if (!sessionId) return;
+            
+            try {
+                await api.patch(`/api/tasks/${taskId}/status`, {
+                    status: newStatus
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                });
+                
+                loadTasks();
+                
+            } catch (error) {
+                console.error('Erro ao atualizar status:', error);
+                showError('Erro ao atualizar status');
+            }
+        }
+        
+        // Funções auxiliares
+        function getPriorityBadgeColor(priority) {
+            const colors = {
+                'LOW': 'bg-green-100 text-green-800',
+                'MEDIUM': 'bg-yellow-100 text-yellow-800',
+                'HIGH': 'bg-red-100 text-red-800',
+                'URGENT': 'bg-red-200 text-red-900'
+            };
+            return colors[priority] || 'bg-gray-100 text-gray-800';
+        }
+        
+        function getPriorityText(priority) {
+            const texts = {
+                'LOW': 'Baixa',
+                'MEDIUM': 'Média',
+                'HIGH': 'Alta',
+                'URGENT': 'Urgente'
+            };
+            return texts[priority] || priority;
+        }
+        
+        function getStatusColor(status) {
+            const colors = {
+                'PENDING': 'bg-yellow-400',
+                'IN_PROGRESS': 'bg-blue-400',
+                'COMPLETED': 'bg-green-400',
+                'CANCELLED': 'bg-red-400'
+            };
+            return colors[status] || 'bg-gray-400';
+        }
+        
+        function showError(message) {
+            alert(message); // Em produção, usar uma notificação melhor
+        }
+        
+        function logout() {
+            const sessionId = localStorage.getItem('sessionId');
+            if (sessionId) {
+                api.post('/api/auth/logout', {}, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionId}`
+                    }
+                }).finally(() => {
+                    localStorage.clear();
+                    window.location.href = 'index.html';
+                });
+            } else {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('statusFilter').addEventListener('change', renderTasks);
+        document.getElementById('priorityFilter').addEventListener('change', renderTasks);
+        document.getElementById('searchInput').addEventListener('input', renderTasks);
+        document.getElementById('taskForm').addEventListener('submit', saveTask);
+        
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUserInfo();
+            loadUsers();
+            loadTasks();
+            
+            // Animações de entrada
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((el, index) => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                
+                setTimeout(() => {
+                    el.style.transition = 'all 0.6s ease-out';
+                    el.style.opacity = '1';
+                    el.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
