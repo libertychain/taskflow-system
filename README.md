@@ -33,7 +33,7 @@ Sistema completo de gestão de tarefas e projetos desenvolvido para a disciplina
 ## 🛠️ Tecnologias Utilizadas
 
 ### Backend
-- **Java 17** - Linguagem principal
+- **Java 17+** - Linguagem principal
 - **Spring Boot 3.0** - Framework principal
 - **Spring Security** - Autenticação e autorização
 - **Spring Data JPA** - Persistência de dados
