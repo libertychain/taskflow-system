@@ -244,11 +244,11 @@ Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICEN
 
 ## 👥 Autores
 
-- **Seu Nome** - Trabalho inicial - [SeuGitHub](https://github.com/seu-usuario)
+- **Francisco J. Alves** - Trabalho inicial - [SeuGitHub](https://github.com/seu-usuario)
 
 ## Agradecimentos
 
-- Prof. Francisco Chagas de Lima Júnior - UERN
+- Prof. Francisco Chagas - UERN
 - Equipe da Disciplina Desenvolvimento de Sistemas Corporativos
 - Comunidade Spring Boot e desenvolvimento web
 
