@@ -244,7 +244,7 @@ Este projeto está licenciado sob a MIT License - veja o arquivo [LICENSE](LICEN
 
 ## 👥 Autores
 
-- **Francisco J. Alves** - Trabalho inicial - [SeuGitHub](https://github.com/seu-usuario)
+- **Francisco J. Alves** - Trabalho inicial - [SeuGitHub](https://github.com/libertychain)
 
 ## Agradecimentos
 
